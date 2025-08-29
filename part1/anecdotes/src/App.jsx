@@ -24,7 +24,7 @@ const App = () => {
       setBest(selected)
     }
   }
-
+  clog
   const handle_Next = () => {
     const next_selected = Math.floor(Math.random() * 8)
     console.log('Current anecdotes', next_selected)
