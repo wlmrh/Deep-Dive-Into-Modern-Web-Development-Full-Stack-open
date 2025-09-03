@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import axios from 'axios'
+import communicate from './services/communicate'
 const Filter = ({filter, handleFilter}) => {
   return (
     <div>
@@ -23,26 +25,40 @@ const PersonForm = ({handleSubmit, newName, handleChange, newNumber, handleChang
   )
 }
 
-const Persons = ({filter, persons}) => {
+const Persons = ({filter, persons, handleDelete}) => {
+  console.log(persons)
   return (persons.filter(
       (person) => (person.name.toLowerCase() === filter.toLowerCase() || filter === '')
     )
     .map(
-      (person, idx) => <div key={idx}>{person.name} {person.number}</div>
+      (person, idx) => {
+        return(
+          <div key={idx} style={{display: 'flex'}}>
+            <div>{person.name} {person.number}</div>
+            <button name={person.name} onClick={handleDelete}>delete</button>
+          </div>
+        )
+      }
     )
   )
 }
 
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: 'Arto Hellas', number: '040-123456', id: 1 },
-    { name: 'Ada Lovelace', number: '39-44-5323523', id: 2 },
-    { name: 'Dan Abramov', number: '12-43-234345', id: 3 },
-    { name: 'Mary Poppendieck', number: '39-23-6423122', id: 4 }
-  ])
+  const [persons, setPersons] = useState([])
   const [filter, setFilter] = useState('')
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
+  useEffect(
+    () => {
+      communicate
+        .getAll()
+        .then(
+          data => {
+            setPersons(data)
+          }
+        )
+    }, []
+  )
 
   const handleFilter = (event) => {
     const newFilter = event.target.value
@@ -63,20 +79,65 @@ const App = () => {
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    const valid = persons.reduce(
-      (accumulator, value) => (accumulator? value.name !== newName : false),
-      true
+    const repeat = persons.reduce(
+      (accumulator, value) => {
+        if (accumulator) return accumulator
+        if (value.name == newName) accumulator = value.id
+        return accumulator
+      },
+      0
     )
 
-    if (!valid){
-      alert(`${newName} is already added to the phonebook`)
-      return
+    if (!repeat){
+      const newPersons = {name: newName, number: newNumber, id: persons[persons.length - 1].id + 1}
+      communicate
+        .create(newPersons)
+        .then(
+          rtn => {
+            setPersons(persons.concat(rtn))
+            setNewName('')
+            setNewNumber('')
+          }
+        )
     }
+    else if (window.confirm(`${newName} is already added to the phonebook, replace the old number with a new one?`)){
+      const newPersons = {name: newName, number: newNumber, id: repeat}
+      communicate
+        .update(repeat, newPersons)
+        .then(() =>{
+            return communicate.getAll()
+          }
+        )
+        .then(data => {
+            setPersons(data)
+          }
+        )
+    }
+  }
 
-    setPersons([...persons, {name: newName, number: newNumber, id: persons[persons.length - 1].id + 1}])
-    console.log("Submitted")
-    setNewName('')
-    setNewNumber('')
+  const handleDelete = (event) => {
+    const name = event.target.name
+    const remove_id = persons.reduce(
+      (accumulator, person) => {
+        if (person.name == name){
+          accumulator = person.id
+        }
+        return accumulator
+      },
+      -1
+    )
+
+    communicate
+      .remove(remove_id)
+      .then(() => {
+        return communicate.getAll()
+      })
+      .then(data => {
+        setPersons(data)
+      })
+      .catch(error => {
+          console.error('Error: ', error)
+      })
   }
 
   return (
@@ -88,7 +149,7 @@ const App = () => {
         handleSubmit={handleSubmit} newName={newName} handleChange={handleChange} newNumber={newNumber} handleChange1={handleChange1}
       />
       <h2>Numbers</h2>
-      <Persons filter={filter} persons={persons}/>
+      <Persons filter={filter} persons={persons} handleDelete={handleDelete}/>
     </div>
   )
 }
