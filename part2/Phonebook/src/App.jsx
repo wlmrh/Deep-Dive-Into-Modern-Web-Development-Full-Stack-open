@@ -1,29 +1,9 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
 import communicate from './services/communicate'
-const Filter = ({filter, handleFilter}) => {
-  return (
-    <div>
-      filter shown with <input value={filter} onChange={handleFilter}/>
-    </div>
-  )
-}
-
-const PersonForm = ({handleSubmit, newName, handleChange, newNumber, handleChange1}) => {
-  return(
-  <form onSubmit={handleSubmit}>
-    <div>
-      name: <input value={newName} onChange={handleChange}/>
-    </div>
-    <div>
-      number: <input value={newNumber} onChange={handleChange1}/>
-    </div>
-    <div>
-      <button type="submit">add</button>
-    </div>
-  </form>
-  )
-}
+import Filter from './components/Filter'
+import PersonForm from './components/PersonForm'
+import Alert from './components/Alert'
+import Notification from './components/Notification'
 
 const Persons = ({filter, persons, handleDelete}) => {
   console.log(persons)
@@ -48,6 +28,8 @@ const App = () => {
   const [filter, setFilter] = useState('')
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
+  const [message, setMessage] = useState(null)
+  const [message1, setMessage1] = useState(null)
   useEffect(
     () => {
       communicate
@@ -97,6 +79,19 @@ const App = () => {
             setPersons(persons.concat(rtn))
             setNewName('')
             setNewNumber('')
+            setMessage(`Added ${newName}`)
+            setTimeout(() => {
+              setMessage(null)
+            }, 5000)
+          }
+        )
+        .catch(
+          (error) => {
+            setMessage(null)
+            setMessage1(`Fail to add ${newName}.`)
+            setTimeout(() => {
+              setMessage1(null)
+            }, 5000)
           }
         )
     }
@@ -110,8 +105,24 @@ const App = () => {
         )
         .then(data => {
             setPersons(data)
+            setMessage(`Modified ${newName}.`)
+            setTimeout(() => {
+              setMessage(null)
+            }, 5000)
           }
         )
+        .catch(
+          (error) => {
+            setMessage(null)
+            setMessage1(`Information of ${newName} has already been removed from server.`)
+            setTimeout(() => {
+              setMessage1(null)
+            }, 5000)
+          }
+        )
+    }
+    else{
+      setMessage(null)
     }
   }
 
@@ -134,15 +145,26 @@ const App = () => {
       })
       .then(data => {
         setPersons(data)
+        setMessage(`Information of ${newName} has successfully been removed from server.`)
+        setMessage1(null)
+        setTimeout(() => {
+          setMessage(null)
+        }, 5000)
       })
       .catch(error => {
-          console.error('Error: ', error)
+        setMessage(null)
+        setMessage1(`Information of ${newName} has already been removed from server.`)
+        setTimeout(() => {
+          setMessage1(null)
+        }, 5000)
       })
   }
 
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={message}/>
+      <Alert message={message1}/>
       <Filter filter={filter} handleFilter={handleFilter}/>
       <h2>Add a new</h2>
       <PersonForm 

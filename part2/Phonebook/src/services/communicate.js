@@ -13,6 +13,7 @@ const getAll = () => {
         .catch(
             error => {
                 console.log(error)
+                throw error
             }
         )
     )
@@ -30,6 +31,7 @@ const create = (newObject) => {
         .catch(
             error => {
                 console.log(error)
+                throw error
             }
         )
     )
@@ -47,6 +49,7 @@ const update = (id, newObject) => {
         .catch(
             error => {
                 console.log(error)
+                throw error
             }
         )
     )
@@ -60,6 +63,12 @@ const remove = (id) => {
                 console.log(response.data)
                 return response.data
             })
+            .catch(
+                error => {
+                    console.log(error)
+                    throw error
+                }
+            )
     )
 }
 
